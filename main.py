@@ -275,7 +275,7 @@ except SyntaxError:
     return code
 
 
-def process_file(file: str = "", fill_code: bool = False):
+def process_file(file: str = "", fill_code: bool = False, **kwargs):
     # ─── Imports ──────────────────────────────────────────────────────────────────────────────────────────────────
 
     imports = ["import base64"]
@@ -302,11 +302,21 @@ def process_file(file: str = "", fill_code: bool = False):
     # ─── Code ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
     if fill_code:
-        STEPS = 2
-        for step in range(STEPS):
+        FILLER_STEPS = kwargs.get("filler_steps", 2)
+        ENCODE_STEPS = kwargs.get("encode_steps", 2)
+
+        for step in range(FILLER_STEPS):
             code = ""
             code = obfuscate_code(code, raw, step)
             raw = code
+        for step in range(ENCODE_STEPS):
+            raw = base64.b64encode(raw.encode("utf-8")).decode("utf-8")
+            code = f'''
+raw_code = """{raw}"""
+
+eval(compile(base64.b64decode(raw_code),"<string>","exec"))'''
+            raw = code
+
     else:
         raw = base64.b64encode(raw).decode("utf-8")
         code = f'''
@@ -335,4 +345,4 @@ eval(compile(base64.b64decode(raw_code),"<string>","exec"))'''
 
 
 if __name__ == "__main__":
-    process_file("", fill_code=True)
+    process_file("examples/example_0.py", fill_code=True, filler_steps=2, encode_steps=2)
